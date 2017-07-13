@@ -4,6 +4,7 @@ library(dygraphs)
 library(zoo)
 library(xts)
 log <- read.csv("input/Master.csv")
+
 colnames(log) <- list( "src", "dst", "dcontext", "clid", "channel", "dstchannel", "lastapp", "lastdata", "start", "answer", "end", "duration", "billsec", "disposition", "amaflags", "uniqueid" )
 callsupport <- log[log$dst == "123", ]
 callsupport$start <- gsub("([0-9]+:[0-9]+:[0-9]+)","", callsupport$start)
