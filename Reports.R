@@ -1,28 +1,70 @@
 setwd("/Users/Alex/Programacion/R/PROYECTO")
 library(dplyr)
 library(highcharter)
-source("./scripts/group_sum.R")
 library(zoo)
 library(xts)
 library(dygraphs)
+source("./scripts/group_sum.R")
+source("./scripts/functions.R")
 
-log <- read.csv("input/Master.csv")
-colnames(log) <- list( "src", "dst", "dcontext", "clid", "channel", "dstchannel", "lastapp", "lastdata", "start", "answer", "end", "duration", "billsec", "disposition", "amaflags", "uniqueid" )
+log <- read.csv("input/Log.csv")
+colnames(log) <- list( "src", "dst", "dcontext", "clid", "channel", "dstchannel", "lastapp", "lastdata", "start", "answer", "end", "duration", "billsec", "disposition", "amaflags", "uniqueid", "ip", "port" )
+calls <- log[log$answer != "", ]
 callfailed <- log[log$answer == "" & log$dst != "123" , ]
 callsupport <- log[log$dst == "123", ]
+congestion <- callfailed[callfailed$disposition == "CONGESTION", ]
 
+## Llamadas diarias
+daily <- daily_count(calls$start)
+dts <- timeS(daily$total, daily$fecha)
+dygraph(dts, main = "Reporte. Llamadas diarias a todo destino.") %>% 
+  dySeries("V1", label="Total") %>% 
+  dyOptions(fillGraph = T, colors=c("green"), pointSize = 2) %>%  
+  dyRangeSelector(dateWindow =date_range(daily$fecha, 7 * 24))
+
+## Duracion de llamadas diarias
+tcalls <- calls %>% group_by(as.Date(start)) %>% summarise(n())
+dts <- timeSD(tcalls[, -1], tcalls[,1])
+dygraph(dts, main = "Reporte. Duracion de llamadas diarias.") %>% 
+  dySeries("V1", label="Total Segundos: ") %>% 
+  dyOptions( colors=c("blue"), pointSize = 2) %>%  
+  dyRangeSelector(dateWindow =date_range(daily$fecha, 7 * 24))
+
+## reporte de llamadas sin exito
+test <- sin_exito(callfailed$start)
+datats <- xts(x=test$total, order.by = strptime(test$fecha, format='%Y-%m-%d %H'))
+
+dygraph(datats, main = "Reporte. Llamadas sin exito.") %>% 
+  dySeries("V1", label="Total") %>% 
+  dyOptions(fillGraph = T, colors=c("red"), pointSize = 2) %>%  
+  dyRangeSelector(dateWindow =date_range(test$fecha, 7 * 24))
+
+### Llamadas sin exito por congestion.
+test <- sin_exito(congestion$start)
+datats <- xts(x=test$total, order.by = strptime(test$fecha, format='%Y-%m-%d %H'))
+
+dygraph(datats, main = "Reporte. Llamadas sin éxito por congestion.") %>% 
+  dySeries("V1", label="Total") %>% 
+  dyOptions(fillGraph = T, colors=c("red"), pointSize = 2) %>%  
+  dyRangeSelector(dateWindow =date_range(test$fecha, 7 * 24))
+
+
+###
+library("highcharter")
+data(diamonds, package = "ggplot2")
+x <- log$disposition
+hchart(as.character(x), type = "pie")
+
+
+##### PIE llamadas sin exito
 xx <- hours(callfailed)
 tsdata = xts(x = xx[,-1], order.by = strptime(xx[,1], format='%Y-%m-%d %H'))
 
-
-dygraph(tsdata[,1], main = "All", group = "lung-deaths")
-dygraph(tsdata[,2], main = "Male", group = "lung-deaths")
-dygraph(tsdata[,3], main = "Female", group = "lung-deaths")
-
-
-dygraph(tsdata, main = "Reporte. Llamadas sin exito.") %>%
-  dyOptions( drawPoints = T, pointSize = 2, colors = RColorBrewer::brewer.pal(3, "Set2")) %>%
+dygraph(tsdata, main = "Reporte. Llamadas sin éxito.") %>%
+  dyOptions( drawPoints = T, pointSize = 2, colors = RColorBrewer::brewer.pal(4, "Set1")) %>%
   dyRangeSelector(dateWindow = c(as.character( xx$fecha[length(xx$fecha) - 168] ),as.character(tail(xx[,1],1))))
 
 #  dyHighlight(hideOnMouseOut = FALSE, highlightSeriesBackgroundAlpha = 0.2) %>%
-ts(1:10, frequency = 4, start = c(1959, 2))
+dygraph(ldeaths, main = "All", group = "lung-deaths")
+dygraph(mdeaths, main = "Male", group = "lung-deaths")
+dygraph(fdeaths, main = "Female", group = "lung-deaths")
