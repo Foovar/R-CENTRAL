@@ -73,4 +73,3 @@ hours <- function(x) {
   
   return(data.frame(fecha, busy, congestion, failed, no_answer))
 }
-

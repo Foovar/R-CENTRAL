@@ -3,7 +3,7 @@ library(dplyr)
 library(dygraphs)
 library(zoo)
 library(xts)
-log <- read.csv("input/Master.csv")
+log <- read.csv("input/Log.csv")
 
 colnames(log) <- list( "src", "dst", "dcontext", "clid", "channel", "dstchannel", "lastapp", "lastdata", "start", "answer", "end", "duration", "billsec", "disposition", "amaflags", "uniqueid" )
 callsupport <- log[log$dst == "123", ]
@@ -19,7 +19,7 @@ colnames(callsupport_repot)<-list("date", "value")
 callsupport_repot$date <- as.Date(callsupport_repot$date)
 soporteTS<- xts(x=callsupport_repot$value,order.by = callsupport_repot$date, format='%Y-%M-%d')
 
-dygraph(soporteTS, main = "N° de llamadas a atencion cliente por dia") %>%
+dygraph(soporteTS, main = "NÂ° de llamadas a atencion cliente por dia") %>%
   dyOptions(drawPoints = T, pointSize = 2,fillGraph = TRUE, fillAlpha = 0.4) %>%
   dyRangeSelector(height = 40)
 
